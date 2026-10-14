@@ -22,6 +22,8 @@ The LangChain integration provides a concrete implementation of the core's abstr
 pip install aap_langchain
 ```
 
+Provider adapters are not dependencies — install the one you use alongside: `langchain-google-genai` (image, audio and video input), `langchain-openai` (image, audio; video is denied by the transport ceiling), `langchain-ollama` (image only). Optional extras: `aap_langchain[hf]` adds Hugging Face model-card capability detection, `[weaviate]`, `[google]` and `[openai]` pin the corresponding adapters.
+
 ### Basic Example
 
 ```python
