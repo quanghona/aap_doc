@@ -82,6 +82,72 @@ When tool calls are extracted, `_process_tools` executes each one:
 
 The chain requires a `device` parameter (`"cpu"` or `"cuda"`) that determines where the model runs. The model is loaded once during initialization and stays on the specified device throughout the chain's lifetime. You can also replace the model at runtime via the `model` property setter, which reloads both the tokenizer and model from the new path or tuple.
 
+### Multimodal Input
+
+Media carried in `AgentMessage.query_media` reaches the model as native Hugging Face chat-template content parts (`{"type": "image", ...}`, `{"type": "audio", ...}`, `{"type": "video", ...}`) on the current user message's part list, never as a string interpolated into the prompt. The chain asks the core funnel for each modality it maps — `self._image_parts(message)`, `self._audio_parts(message)` and `self._video_parts(message)` — and converts every resolved `MediaReference` with `media_ref_to_image_part`, `media_ref_to_audio_part` or `media_ref_to_video_part`. Document is not mapped yet.
+
+```python
+from aap_core.types import AgentMessage
+from aap_transformers.chain import ChatCausalMultiTurnsChain
+
+chain = ChatCausalMultiTurnsChain(
+    model="Qwen/Qwen2-Audio-7B-Instruct",
+    system_prompt="You are helpful.",
+    user_prompt_template="{query}",
+    device="cuda",
+)
+
+message = AgentMessage(
+    query="What is being said in this clip?",
+    query_media=[("audio", "/data/clips/meeting.wav")],
+)
+result = chain.invoke(message)
+```
+
+```python
+from aap_core.types import AgentMessage
+from aap_transformers.chain import ChatCausalMultiTurnsChain
+
+chain = ChatCausalMultiTurnsChain(
+    model="Qwen/Qwen2.5-VL-7B-Instruct",
+    system_prompt="You are helpful.",
+    user_prompt_template="{query}",
+    device="cuda",
+)
+
+message = AgentMessage(
+    query="What happens in this video?",
+    query_media=[("video", "https://example.com/clip.mp4")],
+)
+result = chain.invoke(message)
+```
+
+Local paths and `data:` URIs are resolved to base64 by the core and decoded at our layer, at prepare time: images become PIL objects, audio becomes a **mono float32 numpy array resampled to the model's feature-extractor sampling rate** (16 kHz when no extractor is loaded), and video becomes a **`uint8` RGB array of shape `(frames, H, W, 3)` sampled uniformly to the model's frame budget** (8 frames when no video processor is loaded). This matters because transformers' own media loaders (`torchcodec`/`librosa`) are optional extras — an ndarray bypasses them entirely inside `apply_chat_template`, so decoding and resampling must happen before the model call. Image and audio `http(s)` URLs pass through untouched and are fetched by the processor at tokenization time, which does require the optional backend.
+
+Audio means audio: the bytes go to the model as an audio part. A pipeline that wants a transcript first is a separate speech-to-text stage, not this path.
+
+**Video breaks the URL passthrough, deliberately.** transformers decodes a string video with `torchcodec` (its default) or falls back to `torchvision`, which needs PyAV — neither ships guaranteed wheels on every platform, so a passthrough part would raise deep inside the processor. `media_ref_to_video_part` therefore decodes every payload itself with OpenCV (whose wheels bundle FFmpeg), including `http(s)` URLs, which are fetched with `httpx` first. Frame sampling happens here too, because an array input skips the processor's own sampling: the budget is read from the loaded video processor's `num_frames` so an array matches what a string would have been sampled to. Loading every frame of a real clip would exhaust memory before the model saw one, so the read is capped at `num_frames × stride`.
+
+Video means one video, never N images: a clip is delivered as a single video part. Turning it into image frames would change what the model was told it received.
+
+**Codec coverage without extras.** The built-in audio decoder (soundfile) handles `wav`, `mp3`, `flac`, `ogg` (Vorbis) and `aiff` base64 refs. `mp4`/`m4a`, `aac`, `opus`, `webm`, `amr` and `x-ms-wma` audio refs — and every audio URL ref — need `pip install "transformers[audio]"` (librosa) or torchcodec. Video decoding is OpenCV's FFmpeg build, so the supported containers are whatever that build includes; the formats core accepts for video are `mp4`, `mpeg`, `quicktime`, `avi`, `webm`, `flv`, `wmv` and `3gpp`. Parts are grouped by modality (images, then audio, then video) rather than kept in `query_media` order, because a resolved reference carries no index back to its declaration.
+
+**What decides whether parts are attached.** Per modality, in priority order:
+
+1. `media_support` entries you set explicitly (`"enabled"` / `"disabled"`), applied by the core gate before detection runs.
+2. The processor actually loaded for this exact revision: an `image_processor` affirms image, a `feature_extractor` affirms audio, and a `video_processor` affirms video — decisively in both directions, since these are the pipelines that will run. Sub-processor attributes are populated only when the model's processor declares them, so an image-only processor reports video `False` rather than missing. Audio-only chat models (Qwen2-Audio, Voxtral, Phi4-multimodal) load through `AutoModelForMultimodalLM`; hybrid vision+audio models (Gemma-3n, Qwen2.5-Omni) keep the `AutoModelForImageTextToText` path, whose mapping already covers them.
+3. Hugging Face model-card task tags, for models identified by repo id when no processor was loadable. `audio-text-to-text` affirms audio input and `video-text-to-text` affirms video; `text-to-speech` affirms neither, since it generates media rather than accepting it.
+
+There is no transport ceiling here, unlike the API-based integrations: transformers *is* the transport, and the chat template carries whatever parts the loaded processor's pipeline can expand. For video that pipeline is fed already-decoded frames, so the one environmental limit is OpenCV's codec set, not a missing wire field. Model-family names are never evidence — variants of one family differ per modality. A modality no source reports on stays undecidable and is assumed capable, so the model's own error surfaces instead of a silent drop.
+
+```python
+# Deliver audio even though nothing can detect it, or never deliver it.
+chain = ChatCausalMultiTurnsChain(
+    model=model_tuple, system_prompt="s", device="cuda",
+    media_support={"image": "enabled", "audio": "disabled"},
+)
+```
+
 ## Usage
 
 ### Basic Example: Simple Chat
@@ -163,6 +229,7 @@ chain = ChatCausalMultiTurnsChain(
 | `max_turns` | `int` | `50` | Maximum number of tool-call turns before the loop terminates. |
 | `include_history` | `int` | — | Number of previous turns to include. `-1` means all. |
 | `store_immediate_steps` | `bool` | `False` | Whether to store all intermediate steps or only the final response. |
+| `media_support` | `Dict[ContentType, Literal["auto", "enabled", "disabled"]]` | `{}` | Per-modality policy for delivering `query_media` as native content parts. Unlisted modalities default to `"auto"` (detection). |
 
 ## API Reference
 
