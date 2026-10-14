@@ -92,6 +92,115 @@ When an LM is set, the chain uses `dspy.context` to apply it during prediction, 
 
 The chain automatically detects the `dspy.History` field in the signature during initialization. When present, it converts the history from a dictionary (in the signature) to a `dspy.History` object (required by the DSPy library) before passing it to the predictor.
 
+### Multimodal Input
+
+dspy delivers media through **signature fields typed with the native `dspy.Image` / `dspy.Audio` types** (and the custom `aap_dspy.utils.Video` type for video), not through message content parts. An adapter that supports media input declares the field on its signature (as `Optional[...]` with `default=None`, so text-only turns carry no media) and maps `AgentMessage.query_media` through the chain's gated funnel — `self.chain._image_parts(message)` / `self.chain._audio_parts(message)` / `self.chain._video_parts(message)` — converting each resolved `MediaReference` with `media_ref_to_image` / `media_ref_to_audio` / `media_ref_to_video`. Document is not mapped.
+
+```python
+import dspy
+from typing import Optional, List
+from aap_core.types import AgentMessage
+from aap_dspy.chain import BaseSignatureAdapter, ChatCausalMultiTurnsChain
+from aap_dspy.utils import media_ref_to_audio
+
+class AudioSig(dspy.Signature):
+    """Answer the question about the audio."""
+    audio: Optional[dspy.Audio] = dspy.InputField(default=None)
+    question: str = dspy.InputField()
+    answer: str = dspy.OutputField()
+
+class AudioAdapter(BaseSignatureAdapter):
+    def __init__(self):
+        self.chain = None  # set right after chain construction
+
+    def msg2sig(self, message: AgentMessage) -> List[AudioSig]:
+        audios = self.chain._audio_parts(message)  # gate applied here
+        return [AudioSig(
+            question=message.query,
+            audio=(media_ref_to_audio(audios[0]) if audios else None),
+            answer="",
+        )]
+
+    def sig2msg(self, signatures, name):
+        return [(name, sig.answer) for sig in signatures]
+
+chain = ChatCausalMultiTurnsChain(signature=AudioSig,
+                                  predictor=dspy.Predict(AudioSig),
+                                  adapter=AudioAdapter())
+chain.adapter.chain = chain
+
+message = AgentMessage(
+    query="What is being said in this clip?",
+    query_media=[("audio", "/data/clips/meeting.wav")],
+)
+result = chain(message)
+```
+
+Video follows the same pattern through `chain._video_parts` and `media_ref_to_video`:
+
+```python
+from aap_dspy.utils import Video, media_ref_to_video
+
+class VideoSig(dspy.Signature):
+    """Answer the question about the video."""
+    video: Optional[Video] = dspy.InputField(default=None)
+    question: str = dspy.InputField()
+    answer: str = dspy.OutputField()
+
+class VideoAdapter(BaseSignatureAdapter):
+    def __init__(self):
+        self.chain = None
+
+    def msg2sig(self, message: AgentMessage) -> List[VideoSig]:
+        videos = self.chain._video_parts(message)  # gate applied here
+        return [VideoSig(
+            question=message.query,
+            video=(media_ref_to_video(videos[0]) if videos else None),
+            answer="",
+        )]
+
+    def sig2msg(self, signatures, name):
+        return [(name, sig.answer) for sig in signatures]
+
+chain = ChatCausalMultiTurnsChain(signature=VideoSig,
+                                  predictor=dspy.Predict(VideoSig),
+                                  adapter=VideoAdapter())
+chain.adapter.chain = chain
+
+message = AgentMessage(
+    query="What happens in this video?",
+    query_media=[("video", "https://example.com/clip.mp4")],
+)
+result = chain(message)
+```
+
+Local paths and `data:` URIs are read and delivered as base64 by the core resolver. `http(s)` URLs pass through as-is for images and video; for audio they are **downloaded at mapping time** (`dspy.Audio` carries no URL field — its wire part is inline base64 plus a format token), so prefer local paths or `data:` URIs when fetch latency matters.
+
+Audio means audio, video means video: the bytes go to the model as an audio or video part. A pipeline that wants a transcript first is a separate speech-to-text stage, not this path. Video is delivered as a container, never sampled into frames — frame extraction is the provider's decision (Gemini samples at 1 FPS, DashScope exposes `fps`/`max_frames`).
+
+`Video` is a custom `dspy.Type` subclass (dspy has no native video type through 3.4.1 — the upstream `dspy.Video` PRs were closed unmerged). It emits a `file` content part, which litellm's provider handlers already dispatch for non-image binary media: Gemini converts it to `inline_data` (base64) or `file_data` (URL) with the correct MIME type; providers without video input reject it at the API level.
+
+**What decides whether media is attached.** Per modality, in priority order:
+
+1. `media_support` entries you set explicitly (`"enabled"` / `"disabled"`), applied by the core gate before detection runs.
+2. The litellm model-info table (`litellm.get_model_info`), read through `model_info_to_capabilities` — `supports_vision`, `supports_audio_input`, `supports_pdf_input`. dspy has no capability metadata of its own; it delegates model handling to litellm, so this is the authoritative source. litellm has no video-input flag, so video is never reported from this source and stays undecidable in auto mode.
+3. Hugging Face model-card task tags, for models identified by repo id (needs the `hf` extra).
+
+Model-family names are never evidence: variants of one family differ per modality. A modality no source reports on stays undecidable and is assumed capable, so the provider's own error surfaces instead of a silent drop. Detection results are cached per LM object.
+
+```python
+# Deliver audio even though nothing can detect it, or never deliver it.
+chain = ChatCausalMultiTurnsChain(
+    signature=AudioSig, predictor=dspy.Predict(AudioSig), adapter=AudioAdapter(),
+    media_support={"image": "enabled", "audio": "disabled"},
+)
+```
+
+Two dspy-specific mechanics worth knowing:
+
+- **Round-trip rehydration.** `Signature.model_dump()` serializes `Image`/`Audio`/`Video` fields to custom-type marker strings, and feeding those back into a signature or predictor degrades the media to text (or fails validation outright for `Audio`). The chain rehydrates media-typed fields around the round-trip in `_generate_response`; adapters need no extra handling.
+- **The format token comes from the MIME subtype** (with any `x-` prefix stripped, matching dspy's own convention). Whether a provider accepts it is below this layer: OpenAI chat endpoints take only `wav` and `mp3`, so other formats fail at the provider rather than here. Rewriting MIME strings would break the adapters that read them, so they pass through unchanged.
+
 ## Usage
 
 ### Basic Example: Simple Predictor
@@ -201,6 +310,7 @@ adapter.remove_prefill("domain")
 | `max_turns` | `int` | `50` | Maximum number of tool-call turns before the loop terminates. |
 | `include_history` | `int` | — | Number of previous turns to include in the conversation. `-1` means all. |
 | `store_immediate_steps` | `bool` | `False` | Whether to store all intermediate steps or only the final response. |
+| `media_support` | `Dict[ContentType, "auto" \| "enabled" \| "disabled"]` | `{}` | Per-modality policy for delivering media from `query_media`; unlisted modalities use capability detection. |
 | `with_lm()` | `dspy.LM \| None` | `None` | Sets a custom language model via the chain's fluent API. |
 
 ## API Reference
