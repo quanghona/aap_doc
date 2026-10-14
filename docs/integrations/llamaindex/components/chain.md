@@ -31,6 +31,51 @@ The `_prepare_conversation` method constructs a list of `ChatMessage` objects fr
 
 The `include_history` parameter controls how many previous turns are included, with `-1` meaning all turns.
 
+### Multimodal Input
+
+Media carried in `AgentMessage.query_media` reaches the model as native LlamaIndex content blocks (`ImageBlock`, `AudioBlock`, `VideoBlock`) on the current `USER` message's block list, never as a string interpolated into the prompt. The chain asks the core funnel for each modality it maps — `self._image_parts(message)`, `self._audio_parts(message)` and `self._video_parts(message)` — and converts every resolved `MediaReference` with `media_ref_to_image_block`, `media_ref_to_audio_block` or `media_ref_to_video_block`. Document is not mapped: `DocumentBlock` requires a filename `MediaReference` does not carry.
+
+```python
+from aap_core.types import AgentMessage
+from aap_llamaindex.chain import ChatCausalMultiTurnsChain
+from llama_index.llms.openai import OpenAI
+
+chain = ChatCausalMultiTurnsChain(model=OpenAI(model="gpt-4o-audio-preview"),
+                                  system_prompt="You are helpful.")
+
+message = AgentMessage(
+    query="What is being said in this clip?",
+    query_media=[("audio", "/data/clips/meeting.wav")],
+)
+result = chain.invoke(message)
+```
+
+Local paths and `data:` URIs are read and delivered as base64; `http(s)` URLs pass through as-is. Parts are grouped by modality (images, then audio, then video) rather than kept in `query_media` order, because a resolved reference carries no index back to its declaration.
+
+Audio means audio: the bytes go to the model as an audio part. A pipeline that wants a transcript first is a separate speech-to-text stage, not this path.
+
+Video means one video: the container goes to the model as a single `VideoBlock`, never as sampled frames. Frame extraction is the provider's decision — Gemini samples at 1 FPS by default — and `MediaReference` carries no way to express a sampling policy, so `media_ref_to_video_block` deliberately leaves `VideoBlock.fps` unset. Unlike `AudioBlock`, `VideoBlock` takes a MIME string (`video_mimetype`), not a format token, so the core's normalized types pass through with no mapping table.
+
+**The format token.** Unlike langchain's dict blocks, `AudioBlock` carries a filetype-style extension token in `format`, not a MIME string — and `llama-index-llms-openai` passes it straight into OpenAI's `input_audio.format`, whose enum accepts only `"wav"` and `"mp3"`. `media_ref_to_audio_block` maps the core's normalized MIME types onto these tokens (`audio/mpeg` → `"mp3"`, never `"mpeg"`), overriding `AudioBlock`'s own sniffing, which reports `"ogg"` for Opus streams, nothing for amr/webm, and `"wmv"` for WMA. URL refs carry no token; the adapter fetches and resolves them when the provider API needs inline bytes.
+
+**What decides whether parts are attached.** Per modality, in priority order:
+
+1. `media_support` entries you set explicitly (`"enabled"` / `"disabled"`), applied by the core gate before detection runs.
+2. The Ollama server's capability list for the exact installed revision (`ollama show` → `capabilities`): `"vision"` affirms image input, `"audio"` affirms audio input. A non-empty list is read as complete, so absence denies.
+3. Hugging Face model-card task tags, for models identified by repo id (needs the `hf` extra). `audio-text-to-text` affirms audio input; `text-to-speech` does not, since it generates audio rather than accepting it.
+4. A transport ceiling from the adapter's own request format (`adapter_capabilities`), read from installed code rather than hardcoded: the Ollama chat message type is scanned for a field per modality (it has `images`, nothing for audio or video — and the adapter raises `ValueError: Unsupported block type` on any non-text/image block), and the OpenAI converter is probed with a well-formed block of each modality (it raises `ValueError` on `VideoBlock`; image and audio convert fine). So audio and video are denied for every Ollama model, and video for every OpenAI-protocol model (including Azure, `OpenAILike` and Together, which share the converter), regardless of what a server list or model card claims. Among LlamaIndex adapters, `llama-index-llms-google-genai` is the one that consumes `VideoBlock` natively — inline under 20 MB, via File API upload above it — and needs no ceiling.
+
+Model-family names are never evidence: variants of one family differ per modality. A modality no source reports on stays undecidable and is assumed capable, so the provider's own error surfaces instead of a silent drop.
+
+```python
+# Deliver audio even though nothing can detect it, or never deliver it.
+chain = ChatCausalMultiTurnsChain(model=model, system_prompt="s",
+                                  media_support={"image": "enabled",
+                                                 "audio": "disabled"})
+```
+
+Forcing a modality the transport cannot carry (`media_support={"audio": "enabled"}` on Ollama) bypasses detection by design, so the adapter's error surfaces rather than being pre-empted.
+
 ### Tool Calling with `chat_with_tools`
 
 The chain uses LlamaIndex's `FunctionCallingLLM.chat_with_tools()` method, which handles the full tool-calling loop internally for a single turn:
