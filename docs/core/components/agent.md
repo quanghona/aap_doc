@@ -18,7 +18,7 @@ The agent's state system is hierarchical: when an agent contains child agents (a
 
 The framework recognizes three categories of agents:
 
-- **Remote agent**: An agent that runs on a separate server. The local instance acts as a client, communicating with the remote agent via protocols such as Google's Agent-to-Agent (A2A) communication standard.
+- **Remote agent**: An agent that runs on a separate server. The local instance acts as a client, communicating with the remote agent via protocols such as the [Agent2Agent (A2A)](https://a2a-protocol.org/) communication standard (v1.0).
 - **Local agent**: A self-contained agent running on the same machine, typically wrapping an LLM, a set of tools, or a RAG pipeline.
 - **Orchestration agent**: A special agent that coordinates multiple child agents to complete a task. It can perform all normal agent operations while also managing the lifecycle and state of its children.
 
@@ -31,7 +31,7 @@ Every agent carries an `AgentCard` — a self-describing manifest that provides 
 - Communication methods
 - Security requirements
 
-The `AgentCard` follows the A2A specification, making agents interoperable across different implementations.
+The `AgentCard` follows the A2A v1.0 specification (`a2a-sdk>=1.0.0`), making agents interoperable across different implementations. In v1.0 the card is a protobuf message: endpoints and protocol bindings live in `supported_interfaces` (each an `AgentInterface` carrying its own `protocol_version`), and transport features such as streaming and the extended card are declared in `capabilities`.
 
 ### State Management
 
@@ -64,13 +64,22 @@ This uniform interface allows any agent to be chained or orchestrated with any o
 
 ```python
 from aap_core import BaseAgent, AgentMessage
-from a2a.types import AgentCard
+from aap_core.utils import agent_capabilities
+from a2a.types import AgentCard, AgentInterface
 
-# Create an agent card describing this agent
+# Create an agent card describing this agent (A2A v1.0 structure)
 card = AgentCard(
     name="my-agent",
     description="A simple example agent",
-    capabilities={},
+    capabilities=agent_capabilities(),
+    supported_interfaces=[
+        AgentInterface(
+            url="http://localhost:8000",
+            protocol_binding="JSONRPC",
+            protocol_version="1.0",
+        )
+    ],
+    skills=[],
 )
 
 # Subclass BaseAgent and implement execute
@@ -114,7 +123,7 @@ class WriterAgent(BaseAgent):
 # Create an orchestration agent that runs children sequentially
 class OrchestratorAgent(BaseAgent):
     card = AgentCard(name="orchestrator", description="Orchestrates research and writing")
-    
+
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.researcher = ResearcherAgent()
