@@ -8,8 +8,6 @@ The `aap_llamaindex` package integrates LlamaIndex into the AI Agent Pattern arc
 
 The LlamaIndex integration maps the core's chain abstraction to LlamaIndex's message-based conversation model. `ChatCausalMultiTurnsChain` takes a `FunctionCallingLLM`, a system prompt, and a user prompt template, then uses LlamaIndex's `chat_with_tools` method to manage multi-turn conversations with tool calling. The chain converts `AgentMessage` objects into LlamaIndex's `ChatMessage` hierarchy with `MessageRole` annotations (`SYSTEM`, `USER`, `ASSISTANT`, `TOOL`). Tool support is provided through LlamaIndex's `BaseTool` and callable interfaces, with tool execution handled natively by LlamaIndex's function calling infrastructure.
 
-![diagram](img/llamaindex-architecture.jpg)
-
 ## Key Differences from Core
 
 The LlamaIndex integration provides a concrete implementation of the core's abstract chain interface, binding it to LlamaIndex's function-calling LLM ecosystem. While the core defines `BaseCausalMultiTurnsChain` as an abstract template method pattern, `aap_llamaindex` implements it using LlamaIndex's `chat_with_tools` method, which handles the ReAct loop and tool execution internally. The integration is specifically designed for LlamaIndex's document-centric RAG workflows, making it the natural choice when the agent needs to interact with structured knowledge bases.
@@ -78,9 +76,9 @@ result = chain.invoke(message)
 
 ## Components
 
-- [`ChatCausalMultiTurnsChain`](https://github.com/quanghona/agent_design_pattern/blob/main/src/llamaindex/src/aap_llamaindex/chain.py) — LlamaIndex-specific implementation of the core's multi-turn chain, using `FunctionCallingLLM` with native tool calling
-- [`RetrieverAdapter`](https://github.com/quanghona/agent_design_pattern/blob/main/src/llamaindex/src/aap_llamaindex/retriever.py) — Wraps LlamaIndex's `BaseRetriever` as a core `BaseRetriever`
-- [`token_from_response`](https://github.com/quanghona/agent_design_pattern/blob/main/src/llamaindex/src/aap_llamaindex/utils.py) — Converts LlamaIndex `CompletionResponse`/`ChatResponse` to core `TokenUsage`
+- [`ChatCausalMultiTurnsChain`](https://github.com/quanghona/aap_llamaindex/blob/main/src/aap_llamaindex/chain.py) — LlamaIndex-specific implementation of the core's multi-turn chain, using `FunctionCallingLLM` with native tool calling
+- [`RetrieverAdapter`](https://github.com/quanghona/aap_llamaindex/blob/main/src/aap_llamaindex/retriever.py) — Wraps LlamaIndex's `BaseRetriever` as a core `BaseRetriever`
+- [`token_from_response`](https://github.com/quanghona/aap_llamaindex/blob/main/src/aap_llamaindex/utils.py) — Converts LlamaIndex `CompletionResponse`/`ChatResponse` to core `TokenUsage`
 
 ## API Reference
 
@@ -93,4 +91,4 @@ result = chain.invoke(message)
 
 - [Core Agent](../../core/components/agent.md) — The base agent concept
 - [Core Chain](../../core/components/chain.md) — The base chain concept
-- [Example Notebooks](../../example/llamaindex/) — Jupyter notebooks with LlamaIndex examples
+- [Example Notebooks](https://github.com/quanghona/aap_example/tree/main/notebook/llamaindex/) — Jupyter notebooks with LlamaIndex examples

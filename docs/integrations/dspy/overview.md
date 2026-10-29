@@ -8,8 +8,6 @@ The `aap_dspy` package integrates the DSPy framework into the AI Agent Pattern a
 
 The DSPy integration maps core concepts to DSPy's abstractions through a signature adapter layer and a chain implementation. The `BaseSignatureAdapter` class converts `AgentMessage` objects into lists of `dspy.Signature` instances before flowing into DSPy predictors, and converts DSPy predictions back into `AgentResponse` tuples. This adapter supports a prefill dictionary for static fields that exist in signatures but not in `AgentMessage`. The `ChatCausalMultiTurnsChain` class implements the core's multi-turn chain interface using a DSPy predictor and adapter, supporting both fully managed tool calling (via `dspy.ReAct`) and manual tool handling (via `dspy.ToolCalls` fields in signatures). The integration also wraps DSPy's `Retrieve` and `Embeddings` classes as `BaseRetriever` implementations, allowing DSPy-powered retrieval to plug directly into the core's retrieval pipeline.
 
-![diagram](img/dspy-architecture.jpg)
-
 ## Key Differences from Core
 
 Unlike the core package which defines imperative agent and chain interfaces, `aap_dspy` embraces DSPy's declarative approach. Instead of writing explicit execution logic, developers define input/output signatures and let DSPy's optimizers find the best prompt structure and model configuration. The integration does not provide its own `BaseAgent` or `BaseLLMChain` implementations — instead, it focuses on the adapter layer that makes DSPy's signatures compatible with the core's message passing protocol.
@@ -58,10 +56,10 @@ message = retriever(message)
 
 ## Components
 
-- [`ChatCausalMultiTurnsChain`](https://github.com/quanghona/agent_design_pattern/blob/main/src/dspy/src/aap_dspy/chain.py) — DSPy-specific multi-turn chain using a `dspy.Module` predictor and `BaseSignatureAdapter`
-- [`BaseSignatureAdapter`](https://github.com/quanghona/agent_design_pattern/blob/main/src/dspy/src/aap_dspy/chain.py) — Converts between `AgentMessage` and `dspy.Signature` with support for prefill dictionaries
-- [`RetrieverAdapter`](https://github.com/quanghona/agent_design_pattern/blob/main/src/dspy/src/aap_dspy/retriever.py) — Wraps DSPy's `Retrieve` or `Embeddings` as a core `BaseRetriever`
-- [`token_from_response`](https://github.com/quanghona/agent_design_pattern/blob/main/src/dspy/src/aap_dspy/utils.py) — Converts DSPy `Prediction` objects to core `TokenUsage`
+- [`ChatCausalMultiTurnsChain`](https://github.com/quanghona/aap_dspy/blob/main/src/aap_dspy/chain.py) — DSPy-specific multi-turn chain using a `dspy.Module` predictor and `BaseSignatureAdapter`
+- [`BaseSignatureAdapter`](https://github.com/quanghona/aap_dspy/blob/main/src/aap_dspy/chain.py) — Converts between `AgentMessage` and `dspy.Signature` with support for prefill dictionaries
+- [`RetrieverAdapter`](https://github.com/quanghona/aap_dspy/blob/main/src/aap_dspy/retriever.py) — Wraps DSPy's `Retrieve` or `Embeddings` as a core `BaseRetriever`
+- [`token_from_response`](https://github.com/quanghona/aap_dspy/blob/main/src/aap_dspy/utils.py) — Converts DSPy `Prediction` objects to core `TokenUsage`
 
 ## API Reference
 
@@ -74,4 +72,4 @@ message = retriever(message)
 
 - [Core Agent](../../core/components/agent.md) — The base agent concept
 - [Core Chain](../../core/components/chain.md) — The base chain concept
-- [Example Notebooks](../../example/dspy/) — Jupyter notebooks with DSPy examples
+- [Example Notebooks](https://github.com/quanghona/aap_example/tree/main/notebook/dspy/) — Jupyter notebooks with DSPy examples

@@ -13,8 +13,6 @@ The two chain types serve different purposes:
 - **`TypicalLLMChain`** follows a linear, single-pass pipeline: the message flows through input validation, prompt enhancement, response generation, and output validation in sequence.
 - **`BaseCausalMultiTurnsChain`** follows a causal, iterative loop: the model generates a response, tools are processed, and the cycle repeats until no further tool calls are needed or the maximum number of turns is reached.
 
-![diagram](img/chain-architecture.jpg)
-
 ## Key Concepts
 
 ### TypicalLLMChain: The Four-Stage Pipeline
@@ -204,6 +202,6 @@ See the full API reference: [`TypicalLLMChain`][aap_core.chain.TypicalLLMChain],
 
 - [Agent](agent.md) — The building block that chains compose
 - [Types](types.md) — `AgentMessage`, `TokenUsage`, and other core types
-- [Guardrail](guardrail.md) — Input/output validation components used by chains
+- [Guardrail](https://github.com/quanghona/aap_core/blob/main/src/aap_core/guardrail.py) — Input/output validation components used by chains
 - [Prompt Augmenter](prompt_augmenter.md) — Context enrichment components used by chains
 - [Orchestration](orchestration.md) — Patterns for coordinating multiple agents and chains

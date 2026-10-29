@@ -8,24 +8,24 @@ The `aap_core` package is the foundational framework for the AI Agent Pattern pr
 
 The core package sits at the base of the architecture, providing framework-agnostic abstractions that all integration packages (`aap_langchain`, `aap_dspy`, `aap_llamaindex`, `aap_transformers`) build upon. It defines the shared type system (`AgentMessage`, `TokenUsage`, `BaseLLMChain`) and the `BaseAgent` / `BaseCausalMultiTurnsChain` interfaces that every integration must implement.
 
-![diagram](img/core-architecture.jpg)
-
 ## Components
 
 The core package provides the foundation for all other integrations:
 
 - [Agent](components/agent.md) — The fundamental agent unit
 - [Chain](components/chain.md) — Chaining agents together
-- [Dedup](components/dedup.md) — Deduplication utilities
-- [Guardrail](components/guardrail.md) — Safety constraints
 - [Orchestration](components/orchestration.md) — Agent coordination patterns
-- [Policy](components/policy.md) — Policy definitions
-- [Policy Trainer](components/policy_trainer.md) — Policy optimization
 - [Prompt Augmenter](components/prompt_augmenter.md) — Prompt enhancement
 - [Retriever](components/retriever.md) — External data retrieval
-- [Thought](components/thought.md) — Reasoning structures
 - [Types](components/types.md) — Shared type definitions
-- [Utils](components/utils.md) — Utility functions
+
+The following modules have no dedicated page yet; see their source and the [API Reference](../api-reference.md):
+
+- [Dedup](https://github.com/quanghona/aap_core/blob/main/src/aap_core/dedup.py) — Deduplication utilities (Bloom, MinHash, SimHash, Suffix Array)
+- [Guardrail](https://github.com/quanghona/aap_core/blob/main/src/aap_core/guardrail.py) — Input/output safety constraints
+- [Policy](https://github.com/quanghona/aap_core/blob/main/src/aap_core/policy.py) — RL policy models
+- [Policy Trainer](https://github.com/quanghona/aap_core/blob/main/src/aap_core/policy_trainer.py) — Replay buffers, exploration modules, and trainers (PPO, DPO, GRPO, Reinforce++)
+- [Utils](https://github.com/quanghona/aap_core/blob/main/src/aap_core/utils.py) — Utility functions
 
 ## API Reference
 
@@ -37,4 +37,4 @@ The core package provides the foundation for all other integrations:
 ## See Also
 
 - [Integrations](../integrations/langchain/overview.md) — Framework-specific packages built on core
-- [Example Notebooks](../../example/langchain/) — Jupyter notebooks with usage examples
+- [Example Notebooks](https://github.com/quanghona/aap_example/tree/main/notebook/langchain/) — Jupyter notebooks with usage examples

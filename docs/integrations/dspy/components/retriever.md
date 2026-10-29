@@ -13,8 +13,6 @@ The adapter integrates with two DSPy retrieval abstractions:
 - **`dspy.Retrieve`**: DSPy's built-in retrieval module that supports multiple search backends (KILT, web search, local vector stores). It returns a list of retrieved passages directly.
 - **`dspy.Embeddings`**: DSPy's embedding-based retrieval module that returns an object with a `.passages` attribute containing the retrieved results.
 
-![diagram](img/retriever-architecture.jpg)
-
 ## Key Concepts
 
 ### BaseRetriever: The Retrieval Contract
@@ -46,7 +44,9 @@ The `data_key` field controls where retrieved data is stored in the message cont
 # data_key = "context.dspy_passages" → stored at message.context["dspy_passages"]
 ```
 
-When multiple results are retrieved, they are joined with spaces into a single string. When a single result is retrieved, it is stored as-is (not wrapped in a list).
+Retrieved passages are always stored as a single string, regardless of hit count: multiple passages are joined with newlines (`\n`), a single passage is stored as that string, and no passages yield an empty string (`""`). The stored type never depends on the number of results — earlier versions stored a bare list for zero or one hit, which failed validation against `str`-annotated `dspy.InputField` signatures.
+
+Structured payloads deserve a note: TOON-encoded tables (from `aap_core`'s `DataFrameRetriever` with `prettier="toon"`) are single-root documents, so joining a table and a prose passage into one `data_key` value is not decodable as TOON. Give each source its own key via `data_key` (see the multi-source example below).
 
 ## Usage
 

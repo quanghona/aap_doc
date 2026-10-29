@@ -17,8 +17,6 @@ The framework provides four concrete implementations:
 - **`SEEPromptAugmenter`** — performs strategic exploration and exploitation for in-context prompt optimization (documented below).
 - **`RLPromptAugmenter`** — uses reinforcement learning to iteratively select and apply augmenters for prompt optimization (documented below).
 
-![diagram](img/prompt_augmenter-architecture.jpg)
-
 ## Key Concepts
 
 ### Loop Control
@@ -191,7 +189,7 @@ This approach is particularly powerful when:
 - The reward signal is well-defined (e.g., a quality scorer, task accuracy, or human preference).
 - You want to automate prompt engineering without manual LLM-based optimization.
 
-> **Note**: `RLPromptAugmenter` requires a trained policy model. See [Policy Trainer](policy_trainer.md) for training instructions.
+> **Note**: `RLPromptAugmenter` requires a trained policy model. See [Policy Trainer](https://github.com/quanghona/aap_core/blob/main/src/aap_core/policy_trainer.py) for training instructions.
 
 #### RL Problem Formulation
 
@@ -500,10 +498,10 @@ The environment (`PromptOptimizationEnv`) and policy model (`BasePolicy` subclas
 
 #### See Also
 
-- [Policy Trainer](policy_trainer.md) — Training policy models for `RLPromptAugmenter`
+- [Policy Trainer](https://github.com/quanghona/aap_core/blob/main/src/aap_core/policy_trainer.py) — Training policy models for `RLPromptAugmenter`
 - [PromptOptimizationEnv](#reinforcement-learning-with-rlpromptaugmenter) — The RL environment for prompt optimization
 - [SEEPromptAugmenter](#strategic-prompt-optimization-with-seepromptaugmenter) — LLM-based prompt optimization (alternative to RL)
-- [RL Prompt Augmenter Training Example](../../example/transformers/rl_prompt_augmenter_training.ipynb) — Complete training notebook
+- [RL Prompt Augmenter Training Example](https://github.com/quanghona/aap_example/blob/main/notebook/transformers/rl_prompt_augmenter_training.ipynb) — Complete training notebook
 
 ```python
 from aap_core import AgentMessage
@@ -1048,6 +1046,6 @@ See the full API reference: [`BasePromptAugmenter`][aap_core.prompt_augmenter.Ba
 
 - [Chain](chain.md) — How prompt augmenters integrate into the `TypicalLLMChain` pipeline
 - [Retriever](retriever.md) — How retrieved data is stored in `AgentMessage.context` for augmentation
-- [Dedup](dedup.md) — The underlying deduplication algorithms (Bloom, MinHash, SimHash, Suffix Array) used by `DeduplicationPromptAugmenter`
-- [Policy Trainer](policy_trainer.md) — How to train a `BasePolicy` for use with `RLPromptAugmenter`
-- [RL Prompt Augmenter Training Example](../../example/transformers/rl_prompt_augmenter_training.ipynb) — Complete training notebook for `RLPromptAugmenter`
+- [Dedup](https://github.com/quanghona/aap_core/blob/main/src/aap_core/dedup.py) — The underlying deduplication algorithms (Bloom, MinHash, SimHash, Suffix Array) used by `DeduplicationPromptAugmenter`
+- [Policy Trainer](https://github.com/quanghona/aap_core/blob/main/src/aap_core/policy_trainer.py) — How to train a `BasePolicy` for use with `RLPromptAugmenter`
+- [RL Prompt Augmenter Training Example](https://github.com/quanghona/aap_example/blob/main/notebook/transformers/rl_prompt_augmenter_training.ipynb) — Complete training notebook for `RLPromptAugmenter`

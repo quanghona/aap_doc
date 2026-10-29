@@ -1,5 +1,5 @@
 site_name: AI Agent Pattern
-repo_url: https://github.com/quanghona/agent_design_pattern
+repo_url: https://github.com/quanghona/aap_doc
 theme:
   name: material
   features:
@@ -52,11 +52,11 @@ plugins:
       handler:
         python:
           paths:
-            - src/core/src/aap_core
-            - src/dspy/src/aap_dspy
-            - src/langchain/src/aap_langchain
-            - src/llamaindex/src/aap_llamaindex
-            - src/transformers/src/aap_transformers
+            - ../aap_core/src
+            - ../aap_dspy/src
+            - ../aap_langchain/src
+            - ../aap_llamaindex/src
+            - ../aap_transformers/src
           options:
             docstring_style: google
             members_order: alphabetical

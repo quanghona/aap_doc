@@ -10,8 +10,6 @@ Retrievers sit between data sources and agents in the component hierarchy. A ret
 
 Retrievers integrate with the `BaseChain` interface, making them directly composable with other components in chains and orchestration patterns. The `BaseRetriever` abstract base class defines the contract; `DataFrameRetriever` is the primary concrete implementation, supporting data from pandas DataFrames, strings, dictionaries, iterables, and JSONL files.
 
-![diagram](img/retriever-architecture.jpg)
-
 ## Key Concepts
 
 ### BaseRetriever: The Retrieval Contract

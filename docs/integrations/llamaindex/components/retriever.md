@@ -13,8 +13,6 @@ The adapter integrates with LlamaIndex's core retrieval abstractions:
 - **`BaseRetriever`** (LlamaIndex): The abstract base class for all LlamaIndex retrievers. Any concrete retriever (vector store, knowledge graph, etc.) can be wrapped.
 - **`BaseNode`**: LlamaIndex's node type containing text content accessible via `get_text()`. The adapter extracts text from each node.
 
-![diagram](img/retriever-architecture.jpg)
-
 ## Key Concepts
 
 ### BaseRetriever: The Retrieval Contract

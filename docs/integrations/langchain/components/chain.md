@@ -14,8 +14,6 @@ The chain integrates with LangChain's core abstractions:
 - **`BaseMessage`**: LangChain's message type hierarchy. The chain builds a conversation list of these messages for each invocation.
 - **`BaseTool` / `Callable`**: Both LangChain tools and plain Python functions are supported as tool implementations.
 
-![diagram](img/chain-architecture.jpg)
-
 ## Key Concepts
 
 ### Conversation Preparation

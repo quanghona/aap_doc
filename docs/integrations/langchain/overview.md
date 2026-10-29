@@ -8,8 +8,6 @@ The `aap_langchain` package integrates LangChain into the AI Agent Pattern archi
 
 The LangChain integration maps the core's chain abstraction to LangChain's message-based conversation model. `ChatCausalMultiTurnsChain` takes a `BaseChatModel`, a system prompt, and a user prompt template, then uses LangChain's internal chain infrastructure to manage multi-turn conversations. The chain converts `AgentMessage` objects into LangChain's `BaseMessage` hierarchy (`SystemMessage`, `HumanMessage`, `AIMessage`, `ToolMessage`) and back again. Tool support is provided through LangChain's `BaseTool` and callable interfaces, with automatic tool calling handled by the underlying LangChain chain.
 
-![diagram](img/langchain-architecture.jpg)
-
 ## Key Differences from Core
 
 The LangChain integration provides a concrete implementation of the core's abstract chain interface, binding it to LangChain's chat model ecosystem. While the core defines `BaseCausalMultiTurnsChain` as an abstract template method pattern, `aap_langchain` implements it using LangChain's `Chain.invoke()` method, which handles the ReAct loop internally. The integration also leverages LangChain's built-in tool calling rather than implementing tool execution manually.
@@ -77,9 +75,9 @@ result = chain.invoke(message)
 
 ## Components
 
-- [`ChatCausalMultiTurnsChain`](https://github.com/quanghona/agent_design_pattern/blob/main/src/langchain/src/aap_langchain/chain.py) — LangChain-specific implementation of the core's multi-turn chain, using `BaseChatModel` and tool calling
-- [`RetrieverAdapter`](https://github.com/quanghona/agent_design_pattern/blob/main/src/langchain/src/aap_langchain/retriever.py) — Wraps LangChain's `BaseRetriever` as a core `BaseRetriever`
-- [`token_from_response`](https://github.com/quanghona/agent_design_pattern/blob/main/src/langchain/src/aap_langchain/utils.py) — Converts LangChain `UsageMetadata` to core `TokenUsage`
+- [`ChatCausalMultiTurnsChain`](https://github.com/quanghona/aap_langchain/blob/main/src/aap_langchain/chain.py) — LangChain-specific implementation of the core's multi-turn chain, using `BaseChatModel` and tool calling
+- [`RetrieverAdapter`](https://github.com/quanghona/aap_langchain/blob/main/src/aap_langchain/retriever.py) — Wraps LangChain's `BaseRetriever` as a core `BaseRetriever`
+- [`token_from_response`](https://github.com/quanghona/aap_langchain/blob/main/src/aap_langchain/utils.py) — Converts LangChain `UsageMetadata` to core `TokenUsage`
 
 ## API Reference
 
@@ -92,4 +90,4 @@ result = chain.invoke(message)
 
 - [Core Agent](../../core/components/agent.md) — The base agent concept
 - [Core Chain](../../core/components/chain.md) — The base chain concept
-- [Example Notebooks](../../example/langchain/) — Jupyter notebooks with LangChain examples
+- [Example Notebooks](https://github.com/quanghona/aap_example/tree/main/notebook/langchain/) — Jupyter notebooks with LangChain examples

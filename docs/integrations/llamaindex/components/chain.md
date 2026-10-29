@@ -14,8 +14,6 @@ The chain integrates with LlamaIndex's core abstractions:
 - **`ChatMessage`**: LlamaIndex's message type, parameterized by `MessageRole` (`SYSTEM`, `USER`, `ASSISTANT`, `TOOL`).
 - **`BaseTool` / `FunctionTool`**: LlamaIndex's tool abstraction. Plain `Callable` functions are automatically wrapped into `FunctionTool` instances.
 
-![diagram](img/chain-architecture.jpg)
-
 ## Key Concepts
 
 ### Conversation Preparation

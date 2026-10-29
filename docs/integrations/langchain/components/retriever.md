@@ -13,8 +13,6 @@ The adapter integrates with LangChain's core retrieval abstractions:
 - **`BaseRetriever`** (LangChain): The abstract base class for all LangChain retrievers. Any concrete retriever (FAISS, Chroma, Pinecone, etc.) can be wrapped.
 - **`BaseDocument`**: LangChain's document type containing `page_content` and `metadata`. The adapter extracts `page_content` from each document.
 
-![diagram](img/retriever-architecture.jpg)
-
 ## Key Concepts
 
 ### BaseRetriever: The Retrieval Contract

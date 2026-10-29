@@ -12,8 +12,6 @@ The types module sits at the lowest level of the component hierarchy. It provide
 - `BaseChain` and `BaseLLMChain` define the abstract interface that all chain implementations must follow
 - `TokenUsage` and `ContentType` are supporting types used throughout the framework
 
-![diagram](img/types-architecture.jpg)
-
 ## Key Concepts
 
 ### AgentMessage
@@ -164,4 +162,4 @@ The types module does not have configurable parameters. Configuration is handled
 
 - [Agent](agent.md) — Uses `AgentMessage` for all agent communication
 - [Chain](chain.md) — Implements `BaseChain` and `BaseLLMChain` interfaces
-- [Utils](utils.md) — Utility functions for working with types
+- [Utils](https://github.com/quanghona/aap_core/blob/main/src/aap_core/utils.py) — Utility functions for working with types

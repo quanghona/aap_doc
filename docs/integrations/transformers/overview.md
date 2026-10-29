@@ -8,8 +8,6 @@ The `aap_transformers` package integrates Hugging Face Transformers into the AI 
 
 The Transformers integration maps the core's chain abstraction to Hugging Face's model inference pipeline. `ChatCausalMultiTurnsChain` accepts either a model path string or a pre-loaded `(tokenizer, model)` tuple, then uses the tokenizer to format conversations and the model to generate responses. The chain converts `AgentMessage` objects into a list of role-content message dictionaries (`TransformersChainMessage`) and back again. Tool support is provided through callable interfaces, with tool call extraction handled via regex parsing of the model's output (e.g., extracting `<tool_call>`-delimited tool call blocks).
 
-![diagram](img/transformers-architecture.jpg)
-
 ## Key Differences from Core
 
 The Transformers integration provides a concrete implementation of the core's abstract chain interface, binding it to Hugging Face's local model inference. Unlike the LangChain and LlamaIndex integrations which rely on cloud API models or managed services, `aap_transformers` runs models entirely locally, giving full control over model weights, inference parameters, and hardware allocation. The integration also includes built-in support for removing thinking tags (e.g., `<think>`/`</think>`) from model outputs, which is particularly relevant for models like Qwen that use these special tokens.
@@ -72,8 +70,8 @@ result = chain.invoke(message)
 
 ## Components
 
-- [`ChatCausalMultiTurnsChain`](https://github.com/quanghona/agent_design_pattern/blob/main/src/transformers/src/aap_transformers/chain.py) — Transformers-specific implementation of the core's multi-turn chain, using `AutoModelForCausalLM` with local inference
-- [`RetrieverAdapter`](https://github.com/quanghona/agent_design_pattern/blob/main/src/transformers/src/aap_transformers/retriever.py) — Transformers-specific retriever (currently a placeholder; no implementation yet)
+- [`ChatCausalMultiTurnsChain`](https://github.com/quanghona/aap_transformers/blob/main/src/aap_transformers/chain.py) — Transformers-specific implementation of the core's multi-turn chain, using `AutoModelForCausalLM` with local inference
+- [`RetrieverAdapter`](https://github.com/quanghona/aap_transformers/blob/main/src/aap_transformers/retriever.py) — Transformers-specific retriever (currently a placeholder; no implementation yet)
 
 ## API Reference
 
@@ -86,4 +84,4 @@ result = chain.invoke(message)
 
 - [Core Agent](../../core/components/agent.md) — The base agent concept
 - [Core Chain](../../core/components/chain.md) — The base chain concept
-- [Example Notebooks](../../example/transformers/) — Jupyter notebooks with Transformers examples
+- [Example Notebooks](https://github.com/quanghona/aap_example/tree/main/notebook/transformers/) — Jupyter notebooks with Transformers examples

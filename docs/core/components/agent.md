@@ -10,8 +10,6 @@ The `BaseAgent` class sits at the center of the component hierarchy. It receives
 
 The agent's state system is hierarchical: when an agent contains child agents (as in orchestration patterns), the `composed_state` property builds a tree representation of the entire agent hierarchy's state, enabling real-time progress tracking and debugging.
 
-![diagram](img/agent-architecture.jpg)
-
 ## Key Concepts
 
 ### Agent Types

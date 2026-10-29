@@ -14,8 +14,6 @@ The chain integrates with Transformers' core abstractions:
 - **`AutoTokenizer`**: The tokenizer that converts conversations into model inputs. It uses `apply_chat_template()` with tool support for proper message formatting.
 - **`TransformersChainMessage`**: A `TypedDict` with `role` and `content` keys that represents each message in the conversation.
 
-![diagram](img/chain-architecture.jpg)
-
 ## Key Concepts
 
 ### Conversation Preparation

@@ -17,8 +17,6 @@ The six orchestration patterns are organized by their execution strategy:
 - **Collaborative**: `DebateAgent`, `VotingAgent` — multi-agent discussion and consensus
 - **Planned**: `CoordinatorAgent` — plan → execute → summarize pipeline
 
-![diagram](img/orchestration-architecture.jpg)
-
 ## Key Concepts
 
 ### Composed State

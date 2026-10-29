@@ -14,8 +14,6 @@ The chain integrates with DSPy's core abstractions:
 - **`dspy.Prediction`**: The output type from DSPy predictors. The chain extracts responses, tool calls, and token usage from predictions.
 - **`dspy.Module`**: The predictor that the chain invokes. This can be any DSPy module, from simple predictors to complex multi-step programs.
 
-![diagram](img/chain-architecture.jpg)
-
 ## Key Concepts
 
 ### Signature Adapter Pattern
